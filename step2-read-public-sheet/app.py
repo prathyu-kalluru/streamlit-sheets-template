@@ -1,23 +1,77 @@
-"""Step 2: Read a public Google Sheet and build a dashboard.
+"""Step 2: Read any public Google Sheet and build a dashboard.
 
-The sheet is "published to the web" as CSV — anyone with the URL can read it.
-No authentication, no secrets, no API keys. We load it with pandas and
-visualise with Streamlit's built-in charts.
+Paste a Google Sheet URL into the app — no source editing, no secrets.
+The app figures out the spreadsheet ID and tab (gid) from whatever URL
+you paste, turns it into a CSV export URL, loads it with pandas, and
+visualises it.
 
-To use your own sheet:
-  1. Follow docs/02-publish-sheet-to-web.md to publish a sheet as CSV.
-  2. Replace SHEET_CSV_URL below with your URL.
-  3. Commit on github.com — Streamlit Cloud will auto-redeploy.
+The sheet has to be readable without logging in — either:
+  * "Published to web" as CSV (File -> Share -> Publish to web -> CSV), or
+  * shared as "Anyone with the link -> Viewer".
 
 Expected columns (header row of the sheet):
   timestamp | workshop | rating | comments | status
 """
 
+import re
+from urllib.parse import parse_qs, urlparse
+
 import pandas as pd
 import streamlit as st
 
-# Replace this placeholder with your own published-to-web CSV URL.
-SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/1n0elq13sj-OVoTSgQUKYaNau_7QPGZp6jrxdoE6WTi0/pub?output=csv"
+# Just a starting value in the input box — paste your own URL to replace it.
+# A normal "Copy link" sheet URL works: the app extracts the id and builds the
+# CSV export URL itself. (A "Publish to web" .../pub?output=csv link works too.)
+DEFAULT_SHEET_URL = (
+    "https://docs.google.com/spreadsheets/d/"
+    "1n0elq13sj-OVoTSgQUKYaNau_7QPGZp6jrxdoE6WTi0/edit"
+)
+
+
+def parse_sheet_url(url: str) -> dict:
+    """Pull the spreadsheet id + tab out of a Google Sheets URL and derive a CSV URL.
+
+    Recognises the two links students actually paste:
+      * Published-to-web:  .../spreadsheets/d/e/<TOKEN>/pub?output=csv
+      * Normal / shared:   .../spreadsheets/d/<ID>/edit#gid=<GID>
+    Returns {kind, id, gid, csv_url}; csv_url is None if we can't make sense of it.
+    """
+    url = url.strip()
+    parsed = urlparse(url)
+    # gid (the tab) can ride in the query (?gid=) or the fragment (#gid=).
+    gid = (
+        parse_qs(parsed.query).get("gid", [None])[0]
+        or parse_qs(parsed.fragment).get("gid", [None])[0]
+    )
+
+    # Published-to-web token: /spreadsheets/d/e/<TOKEN>/pub...  (check this first;
+    # the bare /d/<id> pattern below would otherwise grab the literal "e").
+    published = re.search(r"/spreadsheets/d/e/([\w-]+)/pub", url)
+    if published:
+        token = published.group(1)
+        csv_url = (
+            f"https://docs.google.com/spreadsheets/d/e/{token}/pub?output=csv"
+        )
+        if gid:
+            csv_url += f"&gid={gid}&single=true"
+        return {"kind": "Published to web", "id": token, "gid": gid, "csv_url": csv_url}
+
+    # Normal / link-shared sheet: /spreadsheets/d/<ID>/...
+    shared = re.search(r"/spreadsheets/d/([\w-]+)", url)
+    if shared:
+        sheet_id = shared.group(1)
+        csv_url = (
+            f"https://docs.google.com/spreadsheets/d/{sheet_id}/export?format=csv"
+        )
+        if gid:
+            csv_url += f"&gid={gid}"
+        return {"kind": "Shared link (CSV export)", "id": sheet_id, "gid": gid, "csv_url": csv_url}
+
+    # Already a direct CSV link of some other shape — just use it as given.
+    if "output=csv" in url or "format=csv" in url:
+        return {"kind": "Direct CSV URL", "id": None, "gid": gid, "csv_url": url}
+
+    return {"kind": None, "id": None, "gid": gid, "csv_url": None}
 
 
 @st.cache_data(ttl=60)
@@ -32,26 +86,55 @@ def load_data(url: str) -> pd.DataFrame:
 
 st.set_page_config(page_title="Step 2: Feedback dashboard", page_icon="📊", layout="wide")
 st.title("📊 Workshop feedback dashboard")
-st.caption("Step 2 — live data from a public Google Sheet. Refreshes every 60 seconds.")
+st.caption("Step 2 — paste a public Google Sheet URL below. Data refreshes every 60 seconds.")
 
-if "REPLACE_ME" in SHEET_CSV_URL:
-    st.info(
-        "**Setup needed.** Open `step2-read-public-sheet/app.py` and replace "
-        "`SHEET_CSV_URL` with your own published-sheet CSV URL. See "
-        "[`docs/02-publish-sheet-to-web.md`](../docs/02-publish-sheet-to-web.md) "
-        "for the click-by-click walkthrough."
+url_input = st.text_input(
+    "Google Sheet URL",
+    value=DEFAULT_SHEET_URL,
+    help="A 'Publish to web' CSV link, or a normal sheet link shared as "
+    "'Anyone with the link → Viewer'.",
+)
+
+if not url_input.strip():
+    st.info("Paste a Google Sheet URL above to load its data.")
+    st.stop()
+
+info = parse_sheet_url(url_input)
+
+if not info["csv_url"]:
+    st.error(
+        "That doesn't look like a Google Sheets URL. Paste something like "
+        "`https://docs.google.com/spreadsheets/d/.../edit` or a published "
+        "`.../pub?output=csv` link."
     )
     st.stop()
 
+# --- What we pulled out of the URL (the new "extract info" bit) ---
+with st.expander("ℹ️ Sheet info (read from the URL)", expanded=True):
+    i1, i2, i3 = st.columns(3)
+    i1.markdown(f"**Link type**  \n{info['kind']}")
+    i2.markdown(f"**Spreadsheet ID**  \n`{info['id'] or '—'}`")
+    i3.markdown(f"**Tab (gid)**  \n`{info['gid'] or 'first / default'}`")
+    st.markdown("**CSV URL the app will read:**")
+    st.code(info["csv_url"], language="text")
+
 try:
-    df = load_data(SHEET_CSV_URL)
+    df = load_data(info["csv_url"])
 except Exception as e:
-    st.error(f"Couldn't load the sheet. Check `SHEET_CSV_URL` in the source.\n\n{e}")
+    st.error(
+        "Couldn't load the sheet. Is it published to web, or shared as "
+        f"'Anyone with the link'?\n\n{e}"
+    )
     st.stop()
 
 if df.empty:
-    st.warning("The sheet is empty. Add a few rows below the header and refresh.")
+    st.warning("The sheet loaded but has no rows. Add data below the header row and refresh.")
     st.stop()
+
+st.success(
+    f"Loaded **{len(df)} rows** × **{len(df.columns)} columns**: "
+    f"{', '.join(df.columns)}"
+)
 
 with st.sidebar:
     st.header("Filters")
