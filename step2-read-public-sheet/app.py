@@ -26,10 +26,9 @@ DEFAULT_SHEET_URL = (
     "https://docs.google.com/spreadsheets/d/"
     "1n0elq13sj-OVoTSgQUKYaNau_7QPGZp6jrxdoE6WTi0/edit"
 )
-
-
-def parse_sheet_url(url: str) -> dict:
-    """Pull the spreadsheet id + tab out of a Google Sheets URL and derive a CSV URL.
+#prtahyusha
+def parse_sheet_url(url: str) -> dict
+    """Pull the spreadsheet id + tab out ofa Google Sheets URL and derive a CSV URL.
 
     Recognises the two links students actually paste:
       * Published-to-web:  .../spreadsheets/d/e/<TOKEN>/pub?output=csv
