@@ -12,7 +12,8 @@ Same steps as [`01-streamlit-cloud-deploy.md`](01-streamlit-cloud-deploy.md). Th
 | App | Main file path | New libraries |
 |---|---|---|
 | Tic-tac-toe | `fun/game-tictactoe/app.py` | none — pure Python + Streamlit |
-| Face detection | `fun/cv-face/app.py` | OpenCV (already in `requirements.txt`) |
+| Face detection (snapshot) | `fun/cv-face/app.py` | OpenCV (already in `requirements.txt`) |
+| Live face tracking | `fun/cv-live/app.py` | OpenCV + `streamlit-webrtc` + `av` |
 
 If you forked this template a while ago, click **Sync fork** on your fork's
 GitHub page first, so the `fun/` folder appears in your copy.
@@ -48,6 +49,42 @@ The sidebar sliders (`scaleFactor`, `minNeighbors`) are live tuning knobs; the
 **blur** checkbox flips detection from "highlight the face" to "hide the face" —
 the same code, used for privacy instead.
 
+## Live face tracking — `fun/cv-live/app.py`
+
+The same Haar cascade, but run on **every frame of a live webcam stream** instead
+of one snapshot, so the box follows your face in real time. It uses
+`streamlit-webrtc`, which opens a **WebRTC** video connection between the browser
+and the app.
+
+**This one is more fragile than the snapshot app — by design, because of the
+network.** WebRTC has to find a path between the browser and the Cloud container:
+
+- On an **open network**, the free public **STUN** server (already configured) is
+  enough, and it just works.
+- On a **firewalled / locked-down network** (many classrooms and offices), STUN
+  isn't enough and you need a **TURN** relay. Community Cloud doesn't give you
+  one. If **START** spins forever and the video never appears, that's almost
+  always this.
+
+If you have TURN credentials (e.g. a free [Twilio](https://www.twilio.com/docs/stun-turn)
+key), add them in the app's **Secrets** and the app picks them up automatically:
+
+```toml
+# .streamlit/secrets.toml  (paste into Advanced settings → Secrets on Cloud)
+[turn]
+urls = ["turn:your-turn-host:3478"]
+username = "your-username"
+credential = "your-credential"
+```
+
+**No TURN, locked-down network? Use the snapshot app (`cv-face`) instead.** It
+teaches exactly the same computer-vision idea and works on any network, because
+it's a plain image upload — no live connection to negotiate.
+
+> Heads-up: `streamlit-webrtc` + `av` are heavy. Adding them to `requirements.txt`
+> makes the **first build of every app** in this repo slower. That's the price of
+> keeping one shared requirements file.
+
 ## Common errors and fixes
 
 - **`ModuleNotFoundError: No module named 'cv2'`** — `opencv-python-headless`
@@ -63,4 +100,8 @@ the same code, used for privacy instead.
   the light, look straight at the camera, get a bit closer, and drag
   **minNeighbors** down in the sidebar before retaking.
 - **First deploy is slow** — the first build of any app now installs OpenCV
-  (~1–2 extra minutes). That's expected; watch **Manage app → Logs**.
+  (and, since `cv-live` was added, `streamlit-webrtc` + `av`), so cold builds
+  take a few extra minutes. That's expected; watch **Manage app → Logs**.
+- **Live app: START spins forever, no video** — WebRTC can't reach across the
+  network. You're on a firewalled network with no TURN relay. Add TURN
+  credentials in Secrets (above), or just use the snapshot app `cv-face`.

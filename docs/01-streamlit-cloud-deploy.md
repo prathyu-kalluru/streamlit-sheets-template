@@ -23,7 +23,8 @@ You'll repeat this flow once per step. The only thing that changes between deplo
      | 3 — collector | `step3-write-admin-gated/collect/app.py` |
      | 3 — admin | `step3-write-admin-gated/admin/app.py` |
      | Fun — game | `fun/game-tictactoe/app.py` |
-     | Fun — face detection | `fun/cv-face/app.py` |
+     | Fun — face detection (snapshot) | `fun/cv-face/app.py` |
+     | Fun — live face tracking | `fun/cv-live/app.py` |
 
    - **App URL:** pick something like `my-feedback-step1` (must be unique across all of Streamlit Cloud).
 3. **(Step 3 only)** Click **Advanced settings** → paste your TOML into the **Secrets** field. See [`03-service-account-setup.md`](03-service-account-setup.md) for what to paste.

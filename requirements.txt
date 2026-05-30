@@ -7,3 +7,7 @@ google-auth>=2.0
 # Streamlit Cloud (no GUI/X11 libraries there).
 opencv-python-headless>=4.8
 numpy>=1.24
+# fun/cv-live: real-time WebRTC face tracking. av (PyAV) is the video codec
+# layer. These add weight to every app's cold build — only cv-live needs them.
+streamlit-webrtc>=0.47
+av>=10

@@ -22,6 +22,7 @@ Two browser-only apps for the last session — pure fun, but each teaches a real
 |------|--------|
 | [`fun/game-tictactoe/`](fun/game-tictactoe/) | Object-oriented programming: a `Board` **class** bundling state + behaviour, kept alive across reruns in `st.session_state`. |
 | [`fun/cv-face/`](fun/cv-face/) | Computer vision: a webcam snapshot via `st.camera_input`, face detection with OpenCV. An image is just numbers; a model is a file of learned patterns. |
+| [`fun/cv-live/`](fun/cv-live/) | The same detector on **live video** via `streamlit-webrtc`. The wow finale — but needs an open network (or a TURN relay); falls back to `cv-face` if the room's wifi blocks WebRTC. |
 
 See [`docs/05-fun-cv-and-games.md`](docs/05-fun-cv-and-games.md). The webcam is just a browser permission — nothing installs on the PC you're using.
 
@@ -67,7 +68,8 @@ Nothing installs on your machine.
 │   └── admin/app.py
 ├── fun/                                 # last-session extras (session 6)
 │   ├── game-tictactoe/app.py            # OOP: a Board class
-│   └── cv-face/app.py                   # computer vision: webcam face detection
+│   ├── cv-face/app.py                   # computer vision: webcam snapshot
+│   └── cv-live/app.py                   # computer vision: live WebRTC tracking
 └── docs/
     ├── 00-git-github-basics.md
     ├── 01-streamlit-cloud-deploy.md
