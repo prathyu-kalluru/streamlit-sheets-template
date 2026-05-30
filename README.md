@@ -10,9 +10,20 @@ You build the app in **three progressive steps**. Each step deploys to **Streaml
 |------|--------|----------------|
 | 1 | [`step1-mock/`](step1-mock/) | Streamlit basics: widgets, forms, `st.dataframe`, your first `st.bar_chart`. Data is hardcoded — no external service. |
 | 2 | [`step2-read-public-sheet/`](step2-read-public-sheet/) | Read a public Google Sheet as CSV with `pandas.read_csv`. Build a dashboard: KPIs (`st.metric`), bar chart, line chart, filters. |
-| 3 | [`step3-write-admin-gated/`](step3-write-admin-gated/) | **Optional / advanced.** Two apps. A public collector writes to a private sheet via a service account; a password-gated admin app views, edits, and visualises the data. |
+| 3 | [`step3-write-admin-gated/`](step3-write-admin-gated/) | **Optional / self-study.** Two apps. A public collector writes to a private sheet via a service account; a password-gated admin app views, edits, and visualises the data. The heaviest step — service-account plumbing. Do it on your own time if you want it. |
 
 Each step folder is **self-contained** — you can deploy step 1, then come back later and deploy steps 2 and 3 without touching the earlier apps.
+
+## Fun extras
+
+Two browser-only apps for the last session — pure fun, but each teaches a real idea:
+
+| Folder | What you learn |
+|------|--------|
+| [`fun/game-tictactoe/`](fun/game-tictactoe/) | Object-oriented programming: a `Board` **class** bundling state + behaviour, kept alive across reruns in `st.session_state`. |
+| [`fun/cv-face/`](fun/cv-face/) | Computer vision: a webcam snapshot via `st.camera_input`, face detection with OpenCV. An image is just numbers; a model is a file of learned patterns. |
+
+See [`docs/05-fun-cv-and-games.md`](docs/05-fun-cv-and-games.md). The webcam is just a browser permission — nothing installs on the PC you're using.
 
 ## Where to start
 
@@ -28,6 +39,7 @@ Each step folder is **self-contained** — you can deploy step 1, then come back
 - [`docs/02-publish-sheet-to-web.md`](docs/02-publish-sheet-to-web.md) — make a Google Sheet readable as CSV (step 2)
 - [`docs/03-service-account-setup.md`](docs/03-service-account-setup.md) — create a service account so step 3 can read/write a private sheet
 - [`docs/04-adapt-to-your-niche.md`](docs/04-adapt-to-your-niche.md) — change the schema and ship your own version
+- [`docs/05-fun-cv-and-games.md`](docs/05-fun-cv-and-games.md) — the fun extras: an OOP game and webcam face detection
 
 ## What you need
 
@@ -53,10 +65,14 @@ Nothing installs on your machine.
 ├── step3-write-admin-gated/
 │   ├── collect/app.py
 │   └── admin/app.py
+├── fun/                                 # last-session extras (session 6)
+│   ├── game-tictactoe/app.py            # OOP: a Board class
+│   └── cv-face/app.py                   # computer vision: webcam face detection
 └── docs/
     ├── 00-git-github-basics.md
     ├── 01-streamlit-cloud-deploy.md
     ├── 02-publish-sheet-to-web.md
     ├── 03-service-account-setup.md
-    └── 04-adapt-to-your-niche.md
+    ├── 04-adapt-to-your-niche.md
+    └── 05-fun-cv-and-games.md
 ```

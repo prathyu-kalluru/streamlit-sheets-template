@@ -2,3 +2,8 @@ streamlit>=1.31
 pandas>=2.0
 gspread>=6.0
 google-auth>=2.0
+# fun/ apps (session 6): computer-vision face detection.
+# Must be the -headless build — the plain opencv-python fails to import on
+# Streamlit Cloud (no GUI/X11 libraries there).
+opencv-python-headless>=4.8
+numpy>=1.24
